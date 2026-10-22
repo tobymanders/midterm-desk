@@ -196,23 +196,26 @@ def history(source, quote, now):
     quote['history'] = sorted(points + [[now * 1000, quote['p']]])
     quote['historyApi'] = url
 
-def senate_control(source):
+def senate_control(source, chamber='senate'):
+    if chamber not in ('senate', 'house'): raise ValueError('Unknown chamber')
+    series = 'CONTROLS' if chamber == 'senate' else 'CONTROLH'
     if source == 'kalshi':
-        markets = fetch(KALSHI + '/markets?event_ticker=CONTROLS-2026&status=open&limit=100')['markets']
-        m = next(m for m in markets if m['ticker'] == 'CONTROLS-2026-R')
+        markets = fetch(KALSHI + f'/markets?event_ticker={series}-2026&status=open&limit=100')['markets']
+        m = next(m for m in markets if m['ticker'] == f'{series}-2026-R')
         q = kalshi_quote(m)
-        if not q: raise ValueError('No usable Senate control quote')
-        q['series'] = 'CONTROLS'
+        if not q: raise ValueError(f'No usable {chamber} control quote')
+        q['series'] = series
     else:
-        event = fetch(POLY + '/events?slug=which-party-will-win-the-senate-in-2026')[0]
+        event = fetch(POLY + f'/events?slug=which-party-will-win-the-{chamber}-in-2026')[0]
         m = next(m for m in event['markets'] if m.get('groupItemTitle') == 'Republican Party' and m.get('active') and not m.get('closed'))
         def array(v): return json.loads(v) if isinstance(v, str) else v
         i = array(m['outcomes']).index('Yes')
         probability = num(array(m['outcomePrices'])[i])
-        if probability is None: raise ValueError('Invalid Senate control quote')
+        if probability is None: raise ValueError(f'Invalid {chamber} control quote')
         q = {'p': round(probability * 100, 4), 'contractSide': 'R', 'id': m['id'],
              'token': array(m['clobTokenIds'])[i], 'retrieved': iso(), 'updated': m.get('updatedAt'),
              'url': 'https://polymarket.com/event/' + event['slug'], 'history': []}
+    if chamber == 'house': return q
     try:
         history(source, q, int(time.time()))
     except Exception as e:
@@ -227,31 +230,31 @@ def collect(previous=None):
     if baseline.exists():
         for source, observation in json.loads(baseline.read_text()).items():
             previous['polls'].setdefault(source, observation)
-    result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}}
+    result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}, 'house': {}}
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
         futures = {pool.submit(polling, s, previous.get('polls', {}).get(s)): s for s in ('silver', 'fifty', 'ddhq', 'rcp')}
         k_future = pool.submit(get_kalshi)
         p_future = pool.submit(get_polymarket)
-        control_futures = {pool.submit(senate_control, source): source for source in ('kalshi', 'polymarket')}
+        control_futures = {pool.submit(senate_control, source, chamber): (source, 'control' if chamber == 'senate' else 'house', chamber) for chamber in ('senate', 'house') for source in ('kalshi', 'polymarket')}
         for f, source in futures.items():
             try: result['polls'][source] = f.result()
             except Exception as e:
-                result['errors'].append(f'{source}: {e}')
+                result['errors'].append('RealClearPolling: automated requests blocked (HTTP 403); retaining the last verified observation.' if source == 'rcp' and getattr(e, 'code', None) == 403 else f'{source}: {e}')
                 if source in previous.get('polls', {}):
                     result['polls'][source] = dict(previous['polls'][source], stale=True)
         try: k, errors = k_future.result(); result['errors'].extend(errors)
         except Exception as e: k = {}; result['errors'].append(f'Kalshi: {e}')
         try: p, errors = p_future.result(); result['errors'].extend(errors)
         except Exception as e: p = {}; result['errors'].append(f'Polymarket: {e}')
-        for future, source in control_futures.items():
+        for future, (source, key, chamber) in control_futures.items():
             try:
-                result['control'][source] = future.result()
-                if result['control'][source].get('historyError'):
-                    result['errors'].append(source + ' Senate control history: ' + result['control'][source]['historyError'])
+                result[key][source] = future.result()
+                if result[key][source].get('historyError'):
+                    result['errors'].append(source + f' {chamber} control history: ' + result[key][source]['historyError'])
             except Exception as e:
-                result['errors'].append(source + ' Senate control: ' + str(e))
-                if source in previous.get('control', {}):
-                    result['control'][source] = dict(previous['control'][source], stale=True)
+                result['errors'].append(source + f' {chamber} control: ' + str(e))
+                if source in previous.get(key, {}):
+                    result[key][source] = dict(previous[key][source], stale=True)
     result['coverage'] = {'kalshi': len(k), 'polymarket': len(p), 'paired': len(k.keys() & p.keys()), 'total': len(STATES), 'missingKalshi': sorted(set(STATES) - set(k)), 'missingPolymarket': sorted(set(STATES) - set(p))}
     # Never mix one fresh platform with an old platform for the ranking.
     if not k or not p:
