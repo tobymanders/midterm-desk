@@ -10,7 +10,7 @@ import threading
 import urllib.request
 import urllib.parse
 from pathlib import Path
-from poll_sources import DDHQ_API, DDHQ_URL, RCP_URL, ddhq_points, rcp_observation
+from poll_sources import DDHQ_API, DDHQ_URL, ddhq_points
 
 KALSHI = 'https://api.elections.kalshi.com/trade-api/v2'
 POLY = 'https://gamma-api.polymarket.com'
@@ -68,14 +68,6 @@ def polling(source, previous=None):
     if source == 'ddhq':
         return {'name': 'DDHQ', 'url': DDHQ_URL, 'api': DDHQ_API,
                 'points': ddhq_points(fetch(DDHQ_API)), 'retrieved': iso()}
-    if source == 'rcp':
-        retrieved = iso()
-        observation = rcp_observation(fetch(RCP_URL, False), retrieved)
-        points = {p['date']: p for p in (previous or {}).get('points', [])}
-        points[observation['date']] = observation
-        return {'name': 'RealClearPolling', 'url': RCP_URL, 'api': RCP_URL,
-                'points': [points[k] for k in sorted(points)], 'retrieved': retrieved,
-                'dateBasis': 'observed', 'historyNote': 'RCP: observed published averages; full chart history unavailable.'}
     if source == 'silver':
         data = []
         for r in csv.DictReader(io.StringIO(fetch(SILVER, False))):
@@ -226,20 +218,16 @@ def senate_control(source, chamber='senate'):
 def collect(previous=None):
     previous = dict(previous or {})
     previous['polls'] = dict(previous.get('polls', {}))
-    baseline = Path(__file__).resolve().parent / 'poll_observations.json'
-    if baseline.exists():
-        for source, observation in json.loads(baseline.read_text()).items():
-            previous['polls'].setdefault(source, observation)
     result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}, 'house': {}}
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {pool.submit(polling, s, previous.get('polls', {}).get(s)): s for s in ('silver', 'fifty', 'ddhq', 'rcp')}
+        futures = {pool.submit(polling, s, previous.get('polls', {}).get(s)): s for s in ('silver', 'fifty', 'ddhq')}
         k_future = pool.submit(get_kalshi)
         p_future = pool.submit(get_polymarket)
         control_futures = {pool.submit(senate_control, source, chamber): (source, 'control' if chamber == 'senate' else 'house', chamber) for chamber in ('senate', 'house') for source in ('kalshi', 'polymarket')}
         for f, source in futures.items():
             try: result['polls'][source] = f.result()
             except Exception as e:
-                result['errors'].append('RealClearPolling: automated requests blocked (HTTP 403); retaining the last verified observation.' if source == 'rcp' and getattr(e, 'code', None) == 403 else f'{source}: {e}')
+                result['errors'].append(f'{source}: {e}')
                 if source in previous.get('polls', {}):
                     result['polls'][source] = dict(previous['polls'][source], stale=True)
         try: k, errors = k_future.result(); result['errors'].extend(errors)

@@ -1,12 +1,8 @@
 """Parsers for the publishers' public generic-ballot chart data."""
 import datetime as dt
-from html.parser import HTMLParser
-import re
-from zoneinfo import ZoneInfo
 
 DDHQ_URL = 'https://embeds-2026.ddhq.io/polls/generic-ballot/national/lv-rv-adults/'
 DDHQ_API = DDHQ_URL + '_payload.json'
-RCP_URL = 'https://www.realclearpolling.com/polls/state-of-the-union/generic-congressional-vote'
 
 
 def decode_nuxt(values):
@@ -54,44 +50,3 @@ def ddhq_points(payload):
     if not points:
         raise ValueError('DDHQ chart contains no valid party-average observations')
     return [points[k] for k in sorted(points)]
-
-
-class Tables(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.rows, self.row, self.cell = [], None, None
-    def handle_starttag(self, tag, attrs):
-        if tag == 'tr': self.row = []
-        if tag in ('td', 'th') and self.row is not None: self.cell = []
-    def handle_data(self, value):
-        if self.cell is not None: self.cell.append(value)
-    def handle_endtag(self, tag):
-        if tag in ('td', 'th') and self.cell is not None:
-            self.row.append(' '.join(''.join(self.cell).split()))
-            self.cell = None
-        if tag == 'tr' and self.row is not None:
-            self.rows.append(self.row)
-            self.row = None
-
-
-def rcp_observation(html, observed_at):
-    parser = Tables()
-    parser.feed(html)
-    democratic, republican = None, None
-    for row in parser.rows:
-        d = next((i for i, s in enumerate(row) if s.lower().startswith('democrats')), None)
-        r = next((i for i, s in enumerate(row) if s.lower().startswith('republicans')), None)
-        if d is not None and r is not None:
-            democratic, republican = d, r
-        if row and row[0].strip().lower() == 'rcp average':
-            if democratic is None or republican is None:
-                raise ValueError('RCP table party ordering is missing; refusing to guess')
-            def percentage(text):
-                if not re.fullmatch(r'\d+(?:\.\d+)?\s*%?', text):
-                    raise ValueError('Invalid RCP average')
-                value = float(text.replace('%', '').strip())
-                if not 0 <= value <= 100: raise ValueError('Invalid RCP percentage')
-                return value
-            date = dt.datetime.fromisoformat(observed_at).astimezone(ZoneInfo('America/Los_Angeles')).date().isoformat()
-            return {'date': date, 'd': percentage(row[democratic]), 'r': percentage(row[republican])}
-    raise ValueError('RCP average unavailable in the public response; retaining the last verified observation')

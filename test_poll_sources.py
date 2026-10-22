@@ -1,5 +1,5 @@
 import unittest
-from poll_sources import ddhq_points, rcp_observation
+from poll_sources import ddhq_points
 
 
 class PollSourcesTest(unittest.TestCase):
@@ -20,15 +20,6 @@ class PollSourcesTest(unittest.TestCase):
         encode(source)
         self.assertEqual(ddhq_points(flat), [{'date': '2026-10-21', 'd': 50.7, 'r': 42.8}])
 
-    def test_rcp_follows_headers_not_fixed_column_order(self):
-        html = '<table><tr><th>Pollster</th><th>Republicans (R)</th><th>Democrats (D)</th></tr><tr><td>RCP Average</td><td>42.1</td><td>50.4</td></tr></table>'
-        self.assertEqual(rcp_observation(html, '2026-10-22T05:00:00+00:00'),
-                         {'date': '2026-10-21', 'd': 50.4, 'r': 42.1})
-
-    def test_blocked_or_unidentified_tables_never_become_data(self):
-        for html in ['<html>Please enable JS</html>', '<table><tr><td>RCP Average</td><td>50.4</td><td>42.1</td></tr></table>']:
-            with self.subTest(html=html), self.assertRaises(ValueError):
-                rcp_observation(html, '2026-10-22T05:00:00+00:00')
 
 
 if __name__ == '__main__':
