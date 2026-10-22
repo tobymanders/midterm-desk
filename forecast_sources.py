@@ -1,12 +1,9 @@
 """Public model forecasts, kept distinct from market-implied probabilities."""
 import datetime as dt
-import json
 import math
-import re
 from poll_sources import decode_nuxt
 
 FIFTY = 'https://fiftyplusone.news/forecast/'
-PF = 'https://www.pollingforecast.com'
 
 
 def probability(value):
@@ -47,41 +44,10 @@ def fifty_forecast(payload, chamber, retrieved):
     return control, races
 
 
-def pf_races(payload, retrieved):
-    if payload.get('dataset') != 'senate': raise ValueError('Not a Senate forecast dataset')
-    races = {}
-    for row in payload['rows']:
-        if row.get('kind') != 'Senate' or row.get('left_party') not in ('D', 'I'): continue
-        state = row['state']
-        # Keep each state's regular/special contract identifiable when joining sources.
-        if state in races: raise ValueError('Multiple Senate contests for one state require explicit matching')
-        left = row['chance_left']
-        races[state] = quote(left if row['left_party'] == 'D' else 0, 1-left,
-            PF + row['page'], PF + '/api/us/senate', retrieved, payload['asOf'],
-            left if row['left_party'] == 'I' else 0)
-        races[state]['special'] = bool(row['special'])
-    if not races: raise ValueError('No usable Senate model probabilities')
-    return races
-
-
-def pf_control(html, retrieved):
-    match = re.search(r'<script\b(?=[^>]*\bid=["\']wd-us["\'])[^>]*>(.*?)</script>', html, re.S)
-    if not match: raise ValueError('Polling Forecast control data unavailable')
-    data = json.loads(match[1])['us']
-    # senR is explicit: the residual is an independent holding the balance, not a Republican win.
-    d, r = data['senD'], data['senR']
-    control = quote(d, r, PF + '/us/senate', PF + '/us', retrieved, independent=max(0, 1-d-r))
-    house = quote(data['house'], 1-data['house'], PF + '/us', PF + '/us', retrieved)
-    return control, house
-
-
 def load_forecast(source, fetch, retrieved):
     if source == 'fifty':
         control, races = fifty_forecast(fetch(FIFTY + 'senate/__data.json'), 'senate', retrieved)
         house, _ = fifty_forecast(fetch(FIFTY + 'house/__data.json'), 'house', retrieved)
-    elif source == 'pollingforecast':
-        races = pf_races(fetch(PF + '/api/us/senate'), retrieved)
-        control, house = pf_control(fetch(PF + '/us', False), retrieved)
     else: raise ValueError('Unknown forecast source')
     return {'control': control, 'house': house, 'races': races}
 

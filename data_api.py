@@ -217,7 +217,14 @@ def senate_control(source, chamber='senate'):
     return q
 
 def collect(previous=None):
-    previous = dict(previous or {})
+    previous = json.loads(json.dumps(previous or {}))
+    # Retired model sources must not return through cached market races.
+    for source in set(previous.get('forecasts', {})) - {'fifty'}:
+        previous['forecasts'].pop(source)
+        for key in ('control', 'house'):
+            previous.get(key, {}).pop(source, None)
+        for race in previous.get('races', []):
+            race.pop(source, None)
     previous['polls'] = dict(previous.get('polls', {}))
     result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}, 'house': {}, 'forecasts': {}}
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
@@ -225,7 +232,7 @@ def collect(previous=None):
         k_future = pool.submit(get_kalshi)
         p_future = pool.submit(get_polymarket)
         control_futures = {pool.submit(senate_control, source, chamber): (source, 'control' if chamber == 'senate' else 'house', chamber) for chamber in ('senate', 'house') for source in ('kalshi', 'polymarket')}
-        forecast_futures = {pool.submit(load_forecast, source, fetch, iso()): source for source in ('fifty', 'pollingforecast')}
+        forecast_futures = {pool.submit(load_forecast, source, fetch, iso()): source for source in ('fifty',)}
         for f, source in futures.items():
             try: result['polls'][source] = f.result()
             except Exception as e:
