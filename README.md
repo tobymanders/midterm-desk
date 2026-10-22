@@ -45,7 +45,7 @@ It contains one combined generic-ballot plot (Silver Bulletin and FiftyPlusOne) 
 Some publishers do not allow browser cross-origin access. For reliable live refreshes, run:
 
 ```sh
-cd /Users/tobymanders/Code/poll_avg
+cd /path/to/midterm-desk
 python3 server.py
 ```
 
