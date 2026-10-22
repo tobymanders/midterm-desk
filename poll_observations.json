@@ -1,0 +1,17 @@
+{
+  "rcp": {
+    "name": "RealClearPolling",
+    "url": "https://www.realclearpolling.com/polls/state-of-the-union/generic-congressional-vote",
+    "api": "https://www.realclearpolling.com/polls/state-of-the-union/generic-congressional-vote",
+    "points": [
+      {
+        "date": "2026-10-21",
+        "d": 50.4,
+        "r": 42.1
+      }
+    ],
+    "retrieved": "2026-10-22T05:20:29.789541+00:00",
+    "dateBasis": "observed",
+    "historyNote": "RCP: latest published average verified October 21; automated access and full history unavailable."
+  }
+}

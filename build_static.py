@@ -22,10 +22,8 @@ def atomic_write(path, text):
 
 
 def build(output, refresh=False):
-    saved = output / 'snapshot.json'
-    if not saved.exists():
-        saved = ROOT / 'snapshot.json'
-    previous = json.loads(saved.read_text()) if saved.exists() else None
+    candidates = [json.loads(path.read_text()) for path in (ROOT / 'snapshot.json', output / 'snapshot.json') if path.exists()]
+    previous = max(candidates, key=lambda data: data.get('retrieved', '')) if candidates else None
     data = collect(previous) if refresh else previous
     if not data or not data.get('polls') or not data.get('races') or not data.get('control'):
         raise ValueError('Incomplete dashboard data; refusing to publish an empty site')
