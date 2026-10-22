@@ -1,0 +1,53 @@
+name: Update and publish Midterm Desk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # 00:17, 06:17, 12:17 and 18:17 UTC; avoid the busiest minute of the hour.
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Restore the last successful API snapshot
+        uses: actions/cache/restore@v4
+        with:
+          path: snapshot.json
+          key: election-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: election-snapshot-
+      - name: Collect current data and build the static dashboard
+        run: python build_static.py --refresh
+      - name: Cache the API snapshot for the next run
+        uses: actions/cache/save@v4
+        with:
+          path: snapshot.json
+          key: election-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload only public dashboard files
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - name: Publish the site
+        id: deployment
+        uses: actions/deploy-pages@v4

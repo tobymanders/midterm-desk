@@ -29,6 +29,7 @@
 <script id="snapshot" type="application/json">__SNAPSHOT__</script>
 <script>
 'use strict';
+const STATIC_HOSTING = false;
 let data=JSON.parse(document.getElementById('snapshot').textContent);
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const C={d:'#2779bf',r:'#cd5363',k:'#157866',p:'#8454bd'}, DAY=86400000;
@@ -51,7 +52,7 @@ const latest=p=>p?.points?.at(-1);
 function render(){
  charts=[];
  $('stamp').textContent='Retrieved '+timeLabel(data.retrieved);
- $('mode').textContent=connected?'Local API connection':'Embedded API snapshot';
+ $('mode').textContent=STATIC_HOSTING?'Published snapshot · updates every 6 hours':connected?'Local API connection':'Embedded API snapshot';
  const s=latest(data.polls.silver),f=latest(data.polls.fifty), top=data.races?.[0];
  $('summary').innerHTML=`<div><span class="label">SILVER BULLETIN · NATIONAL LEAD</span><div class="value">${s?partyHTML(s.d-s.r):'Unavailable'}</div><span class="sub">${s?'Model date '+dateLabel(s.date):'No polling data'}</span></div><div><span class="label">FIFTYPLUSONE · NATIONAL LEAD</span><div class="value">${f?partyHTML(f.d-f.r):'Unavailable'}</div><span class="sub">${f?'Model date '+dateLabel(f.date):'No polling data'}</span></div><div><span class="label">CLOSEST MATCHED SENATE RACE</span><div class="value">${top?esc(top.name):'Unavailable'}</div><span class="sub">${top?partyHTML(50-top.kalshi.p,'edge',top.state==='NE'?'I':'D')+' Kalshi / '+partyHTML(50-top.polymarket.p,'edge',top.state==='NE'?'I':'D')+' Polymarket':'Waiting for both exchanges'}</span></div>`;
  $('polls').innerHTML='';
@@ -188,15 +189,16 @@ async function directRefresh(){
  }));
  next.errors=errors;next.retrieved=now;return next;
 }
-async function refresh(){if(refreshing)return;refreshing=true;$('refresh').disabled=true;$('refresh').textContent='Refreshing…';$('refreshProgress').textContent='Querying polling sources and the Senate market universe…';
- try{if(location.protocol==='http:'||location.protocol==='https:'){data=await api('/api/refresh');connected=true;}else{data=await directRefresh();}render();$('refreshProgress').textContent=data.errors?.length?'Some sources failed; retained data is labeled.':'Updated '+timeLabel(data.retrieved);}
- catch(e){$('refreshProgress').textContent='Refresh failed. Showing the saved snapshot. Use Live setup.';$('notice').hidden=false;$('notice').textContent='Could not reach the data service: '+e.message+'. Saved data is still available.';}
- finally{refreshing=false;$('refresh').disabled=false;$('refresh').textContent='↻ Refresh data';}
+async function refresh(){if(refreshing)return;refreshing=true;$('refresh').disabled=true;$('refresh').textContent='Refreshing…';$('refreshProgress').textContent=STATIC_HOSTING?'Loading the latest published data…':'Querying polling sources and the Senate market universe…';
+ try{if(STATIC_HOSTING&&location.protocol!=='file:'){data=await api(new URL('./snapshot.json',location.href).href);}else if(location.protocol==='http:'||location.protocol==='https:'){data=await api('/api/refresh');connected=true;}else{data=await directRefresh();}render();$('refreshProgress').textContent=data.errors?.length?'Some sources failed; retained data is labeled.':'Updated '+timeLabel(data.retrieved);}
+ catch(e){$('refreshProgress').textContent=(STATIC_HOSTING?'Could not load the published data. Showing the saved snapshot.':'Refresh failed. Showing the saved snapshot. Use Live setup.');$('notice').hidden=false;$('notice').textContent='Could not reach the data service: '+e.message+'. Saved data is still available.';}
+ finally{refreshing=false;$('refresh').disabled=false;$('refresh').textContent=STATIC_HOSTING?'↻ Reload data':'↻ Refresh data';}
 }
 $('refresh').onclick=refresh;
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>charts.forEach(draw=>draw()),100);});
 render();
-if(location.protocol!=='file:'){api('/api/status').then(x=>{if(x.service==='midterm-desk'){connected=true;$('mode').textContent='Local API connection';setInterval(()=>{if(!document.hidden)refresh();},300000);}}).catch(()=>{});}
+if(STATIC_HOSTING){$('connection').hidden=true;$('refresh').textContent='↻ Reload data';if(location.protocol!=='file:')setInterval(()=>{if(!document.hidden)refresh();},21600000);}
+if(!STATIC_HOSTING&&location.protocol!=='file:'){api('/api/status').then(x=>{if(x.service==='midterm-desk'){connected=true;$('mode').textContent='Local API connection';setInterval(()=>{if(!document.hidden)refresh();},300000);}}).catch(()=>{});}
 </script>
 </body>
 </html>

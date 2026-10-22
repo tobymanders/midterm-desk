@@ -1,5 +1,41 @@
 # The Midterm Desk
 
+## Hosted dashboard
+
+GitHub Pages deployment targets https://tobymanders.github.io/midterm-desk/.
+The site is public. A private source repository requires a GitHub plan that supports
+Pages for private repositories; otherwise the repository must also be public.
+
+The `Update and publish Midterm Desk` workflow runs on pushes to `main`, manual dispatch,
+and every six hours at 00:17, 06:17, 12:17 and 18:17 UTC. It fetches public APIs on the
+GitHub runner and publishes only `public/index.html`, `public/snapshot.json` and `.nojekyll`.
+No API credentials or always-on computer are needed. Scheduled runs are best-effort.
+
+Published **Reload data** fetches the latest same-site snapshot; it does not make visitors
+query the polling or betting APIs. Open pages check for a new snapshot every six hours.
+The source panel retains the actual retrieval times and reports stale or failed sources.
+A cached previous snapshot provides fallback data between workflow runs.
+
+To deploy manually, open the repository's **Actions** tab, select **Update and publish
+Midterm Desk**, and choose **Run workflow**. Configure **Settings → Pages → Source** as
+**GitHub Actions**. Changes go live after a successful workflow run.
+
+Build locally without new API requests:
+
+```sh
+python3 build_static.py
+```
+
+Build with fresh API data:
+
+```sh
+python3 build_static.py --refresh
+```
+
+The public output is in `public/`, which is ignored by Git. The local server below remains
+available for development; it is not part of the hosted deployment.
+
+
 Open **dashboard.html** in any modern browser. It is a standalone, dependency-free HTML dashboard with a verified data snapshot embedded inside it. No CDN, font download, or server is needed to view or interact with it.
 
 It contains one combined generic-ballot plot (Silver Bulletin and FiftyPlusOne) a Senate-control comparison plot beside the ballot plot, and ten Senate race plots comparing Kalshi and Polymarket Republican win probabilities. Hover, keyboard arrows, legend toggles, range buttons, drag-to-zoom, search, sorting, CSV export, and standalone HTML export are supported.
