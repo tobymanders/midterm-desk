@@ -123,6 +123,26 @@ def get_kalshi():
             except Exception as e: errors.append(f"Kalshi {futures[f]}: {e}")
     return out, errors
 
+def race_candidates(markets, state):
+    candidates = []
+    for market in markets:
+        if not market.get('active') or market.get('closed') or not market.get('outcomePrices'):
+            continue
+        label = market.get('groupItemTitle', '').strip()
+        match = re.fullmatch(r'(.+?)\s*\(([DRI])\)', label)
+        if match:
+            name, party = match.groups()
+        elif state == 'AK' and label in ('Mary Peltola', 'Sen. Dan Sullivan'):
+            name, party = label.removeprefix('Sen. '), 'D' if label == 'Mary Peltola' else 'R'
+        elif state == 'NE' and label == 'Independent':
+            # The nonpartisan challenger is listed on Nebraska's official 2026 ballot.
+            name, party = 'Dan Osborn', 'I'
+        else:
+            continue
+        if not any(c['name'] == name for c in candidates):
+            candidates.append({'name': name, 'party': party})
+    return sorted(candidates, key=lambda c: ({'D': 0, 'I': 1, 'R': 2}[c['party']], c['name']))
+
 def get_polymarket():
     events = list(STATES.items())
     out, errors = {}, []
@@ -146,7 +166,7 @@ def get_polymarket():
             p = num(prices[idx])
             if p is None: continue
             return state, {'p': round((1 - p if alaska_candidate else p) * 100, 4), 'contractSide': 'D' if alaska_candidate else 'R', 'yesProbability': round(p * 100, 4), 'bid': num(m.get('bestBid')), 'ask': num(m.get('bestAsk')),
-               'candidateSpecific': alaska_candidate, 'token': tokens[idx], 'candidate': m.get('groupItemTitle', ''), 'id': m['id'],
+               'candidates': race_candidates(e['markets'], state), 'candidateSpecific': alaska_candidate, 'token': tokens[idx], 'candidate': m.get('groupItemTitle', ''), 'id': m['id'],
                'updated': m.get('updatedAt'), 'retrieved': iso(), 'history': [],
                'url': 'https://polymarket.com/event/' + e['slug']}
         return state, None
@@ -241,7 +261,7 @@ def collect(previous=None):
     else:
         for s in k.keys() & p.keys():
             result['races'].append({'state': s, 'name': STATES[s], 'special': s in ('FL','OH'),
-                'kalshi': k[s], 'polymarket': p[s],
+                'kalshi': k[s], 'polymarket': p[s], 'candidates': p[s].get('candidates', []),
                 'distance': (abs(k[s]['p'] - 50) + abs(p[s]['p'] - 50)) / 2})
         result['races'].sort(key=lambda r: (r['distance'], r['state']))
         result['marketRetrieved'] = iso()
@@ -256,6 +276,11 @@ def collect(previous=None):
                     race[source]['historyError'] = str(e)
                     race[source]['history'] = [[now * 1000, race[source]['p']]]
                     result['errors'].append(f"{source} {race['state']} history: {e}")
+    catalog_path = Path(__file__).resolve().parent / 'candidate_names.json'
+    catalog = json.loads(catalog_path.read_text()) if catalog_path.exists() else {}
+    for race in result['races']:
+        if not race.get('candidates'):
+            race['candidates'] = catalog.get(race['state'], [])
     return result
 
 if __name__ == '__main__':

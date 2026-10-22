@@ -1,0 +1,342 @@
+{
+  "AR": [
+    {
+      "name": "Hallie Shoffner",
+      "party": "D"
+    },
+    {
+      "name": "Tom Cotton",
+      "party": "R"
+    }
+  ],
+  "GA": [
+    {
+      "name": "Jon Ossoff",
+      "party": "D"
+    },
+    {
+      "name": "Mike Collins",
+      "party": "R"
+    }
+  ],
+  "FL": [
+    {
+      "name": "Angie Nixon",
+      "party": "D"
+    },
+    {
+      "name": "Ashley Moody",
+      "party": "R"
+    }
+  ],
+  "AL": [
+    {
+      "name": "Everett Wess",
+      "party": "D"
+    },
+    {
+      "name": "Barry Moore",
+      "party": "R"
+    }
+  ],
+  "AK": [
+    {
+      "name": "Mary Peltola",
+      "party": "D"
+    },
+    {
+      "name": "Dan Sullivan",
+      "party": "R"
+    }
+  ],
+  "CO": [
+    {
+      "name": "John Hickenlooper",
+      "party": "D"
+    },
+    {
+      "name": "Mark Baisley",
+      "party": "R"
+    }
+  ],
+  "IA": [
+    {
+      "name": "Josh Turek",
+      "party": "D"
+    },
+    {
+      "name": "Ashley Hinson",
+      "party": "R"
+    }
+  ],
+  "KS": [
+    {
+      "name": "Adam Hamilton",
+      "party": "D"
+    },
+    {
+      "name": "Roger Marshall",
+      "party": "R"
+    }
+  ],
+  "IL": [
+    {
+      "name": "Juliana Stratton",
+      "party": "D"
+    },
+    {
+      "name": "Don Tracy",
+      "party": "R"
+    }
+  ],
+  "KY": [
+    {
+      "name": "Charles Booker",
+      "party": "D"
+    },
+    {
+      "name": "Andy Barr",
+      "party": "R"
+    }
+  ],
+  "ID": [
+    {
+      "name": "Todd Achilles",
+      "party": "I"
+    },
+    {
+      "name": "Jim Risch",
+      "party": "R"
+    }
+  ],
+  "MI": [
+    {
+      "name": "Abdul El-Sayed",
+      "party": "D"
+    },
+    {
+      "name": "Mike Rogers",
+      "party": "R"
+    }
+  ],
+  "MA": [
+    {
+      "name": "Ed Markey",
+      "party": "D"
+    },
+    {
+      "name": "John Deaton",
+      "party": "R"
+    }
+  ],
+  "ME": [
+    {
+      "name": "Troy Jackson",
+      "party": "D"
+    },
+    {
+      "name": "Susan Collins",
+      "party": "R"
+    }
+  ],
+  "MN": [
+    {
+      "name": "Peggy Flanagan",
+      "party": "D"
+    },
+    {
+      "name": "Michele Tafoya",
+      "party": "R"
+    }
+  ],
+  "LA": [
+    {
+      "name": "Jamie Davis",
+      "party": "D"
+    },
+    {
+      "name": "Julia Letlow",
+      "party": "R"
+    }
+  ],
+  "MT": [
+    {
+      "name": "Alani Bankhead",
+      "party": "D"
+    },
+    {
+      "name": "Kurt Alme",
+      "party": "R"
+    }
+  ],
+  "NE": [
+    {
+      "name": "Dan Osborn",
+      "party": "I"
+    },
+    {
+      "name": "Pete Ricketts",
+      "party": "R"
+    }
+  ],
+  "MS": [
+    {
+      "name": "Scott Colom",
+      "party": "D"
+    },
+    {
+      "name": "Cindy Hyde-Smith",
+      "party": "R"
+    }
+  ],
+  "NM": [
+    {
+      "name": "Ben Ray Luj\u00e1n",
+      "party": "D"
+    },
+    {
+      "name": "Larry Marker",
+      "party": "R"
+    }
+  ],
+  "OH": [
+    {
+      "name": "Sherrod Brown",
+      "party": "D"
+    },
+    {
+      "name": "Jon Husted",
+      "party": "R"
+    }
+  ],
+  "NH": [
+    {
+      "name": "Chris Pappas",
+      "party": "D"
+    },
+    {
+      "name": "John E. Sununu",
+      "party": "R"
+    }
+  ],
+  "OK": [
+    {
+      "name": "N\u2019Kiyla \u201cJasmine\u201d Thomas",
+      "party": "D"
+    },
+    {
+      "name": "Kevin Hern",
+      "party": "R"
+    }
+  ],
+  "NC": [
+    {
+      "name": "Roy Cooper",
+      "party": "D"
+    },
+    {
+      "name": "Michael Whatley",
+      "party": "R"
+    }
+  ],
+  "OR": [
+    {
+      "name": "Jeff Merkley",
+      "party": "D"
+    },
+    {
+      "name": "David Brock Smith",
+      "party": "R"
+    }
+  ],
+  "RI": [
+    {
+      "name": "Jack Reed",
+      "party": "D"
+    },
+    {
+      "name": "Raymond McKay",
+      "party": "R"
+    }
+  ],
+  "SC": [
+    {
+      "name": "Annie Andrews",
+      "party": "D"
+    },
+    {
+      "name": "Darline Graham Nordone",
+      "party": "R"
+    }
+  ],
+  "TN": [
+    {
+      "name": "Marquita Bradshaw",
+      "party": "D"
+    },
+    {
+      "name": "Bill Hagerty",
+      "party": "R"
+    }
+  ],
+  "TX": [
+    {
+      "name": "James Talarico",
+      "party": "D"
+    },
+    {
+      "name": "Ken Paxton",
+      "party": "R"
+    }
+  ],
+  "VA": [
+    {
+      "name": "Mark Warner",
+      "party": "D"
+    },
+    {
+      "name": "Bert Mizusawa",
+      "party": "R"
+    }
+  ],
+  "NJ": [
+    {
+      "name": "Cory Booker",
+      "party": "D"
+    },
+    {
+      "name": "Justin Murphy",
+      "party": "R"
+    }
+  ],
+  "WV": [
+    {
+      "name": "Rachel Fetty Anderson",
+      "party": "D"
+    },
+    {
+      "name": "Shelley Moore Capito",
+      "party": "R"
+    }
+  ],
+  "WY": [
+    {
+      "name": "James W. Byrd",
+      "party": "D"
+    },
+    {
+      "name": "Harriet Hageman",
+      "party": "R"
+    }
+  ],
+  "SD": [
+    {
+      "name": "Brian Bengs",
+      "party": "I"
+    },
+    {
+      "name": "Mike Rounds",
+      "party": "R"
+    }
+  ]
+}
