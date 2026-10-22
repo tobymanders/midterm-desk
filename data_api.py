@@ -11,6 +11,7 @@ import urllib.request
 import urllib.parse
 from pathlib import Path
 from poll_sources import DDHQ_API, DDHQ_URL, ddhq_points
+from forecast_sources import load_forecast, retain_history
 
 KALSHI = 'https://api.elections.kalshi.com/trade-api/v2'
 POLY = 'https://gamma-api.polymarket.com'
@@ -218,12 +219,13 @@ def senate_control(source, chamber='senate'):
 def collect(previous=None):
     previous = dict(previous or {})
     previous['polls'] = dict(previous.get('polls', {}))
-    result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}, 'house': {}}
+    result = {'retrieved': iso(), 'polls': {}, 'races': [], 'errors': [], 'coverage': {}, 'control': {}, 'house': {}, 'forecasts': {}}
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
         futures = {pool.submit(polling, s, previous.get('polls', {}).get(s)): s for s in ('silver', 'fifty', 'ddhq')}
         k_future = pool.submit(get_kalshi)
         p_future = pool.submit(get_polymarket)
         control_futures = {pool.submit(senate_control, source, chamber): (source, 'control' if chamber == 'senate' else 'house', chamber) for chamber in ('senate', 'house') for source in ('kalshi', 'polymarket')}
+        forecast_futures = {pool.submit(load_forecast, source, fetch, iso()): source for source in ('fifty', 'pollingforecast')}
         for f, source in futures.items():
             try: result['polls'][source] = f.result()
             except Exception as e:
@@ -243,6 +245,16 @@ def collect(previous=None):
                 result['errors'].append(source + f' {chamber} control: ' + str(e))
                 if source in previous.get(key, {}):
                     result[key][source] = dict(previous[key][source], stale=True)
+        for future, source in forecast_futures.items():
+            try:
+                result['forecasts'][source] = retain_history(future.result(), previous.get('forecasts', {}).get(source, {}))
+            except Exception as e:
+                result['errors'].append(source + ' forecast: ' + str(e))
+                cached = previous.get('forecasts', {}).get(source)
+                if cached:
+                    cached = json.loads(json.dumps(cached))
+                    for q in [cached['control'], cached['house'], *cached['races'].values()]: q['stale'] = True
+                    result['forecasts'][source] = cached
     result['coverage'] = {'kalshi': len(k), 'polymarket': len(p), 'paired': len(k.keys() & p.keys()), 'total': len(STATES), 'missingKalshi': sorted(set(STATES) - set(k)), 'missingPolymarket': sorted(set(STATES) - set(p))}
     # Never mix one fresh platform with an old platform for the ranking.
     if not k or not p:
@@ -272,6 +284,12 @@ def collect(previous=None):
     for race in result['races']:
         if not race.get('candidates'):
             race['candidates'] = catalog.get(race['state'], [])
+    for source, model in result['forecasts'].items():
+        result['control'][source] = model['control']
+        result['house'][source] = model['house']
+        for race in result['races']:
+            q = model['races'].get(race['state'])
+            if q and ('special' not in q or q['special'] == race['special']): race[source] = q
     return result
 
 if __name__ == '__main__':
