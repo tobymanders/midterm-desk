@@ -33,6 +33,20 @@ button,select,.search,.modal-content,.chart .tip{background:var(--card);color:va
 button:hover,.race-dial:hover{background:var(--hover)}a{color:var(--link)}.dial-plot-link{color:inherit}
 .overall-dials,.race-dials,details,.summary>div,.tag{background:var(--surface)}.tile-footer{border-color:var(--line)}.range-control.is-floating{background:var(--card)}.modal-content code{background:var(--paper)}.notice{background:var(--surface);border-color:var(--amber);color:var(--amber)}
 .theme-control{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-top:6px;font-size:11px}.theme-control select{min-height:36px}@media(max-width:600px){.theme-control{justify-content:flex-start}}
+/* Senate race table. */
+.race-table-section{min-width:0}.table-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.table-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:8px 0 10px;font-size:12px}.table-controls label{display:flex;align-items:center;gap:5px;color:var(--muted)}.table-controls select,.table-controls input[type=number],.table-controls button,.table-controls .search{min-height:34px;padding:5px 8px;font-size:12px}.table-controls input[type=number]{width:62px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}.table-controls .search{width:210px}.table-controls .check{color:var(--ink)}
+.table-wrap{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.race-table{border-collapse:separate;border-spacing:0;width:100%;min-width:1080px;font-size:13px}.race-table th,.race-table td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;vertical-align:middle}.race-table th:first-child,.race-table td:first-child,.race-table .l{text-align:left}
+.race-table thead th{position:sticky;top:0;z-index:3;background:var(--surface);font-size:11px;letter-spacing:.02em;color:var(--muted);padding:0}.race-table thead th button{all:unset;box-sizing:border-box;display:flex;gap:4px;align-items:center;justify-content:flex-end;width:100%;padding:9px;cursor:pointer;font-weight:bold}.race-table thead th.l button{justify-content:flex-start}.race-table thead th button:hover{color:var(--ink)}.race-table thead th button:focus-visible{outline:2px solid #3697c9;outline-offset:-2px}.race-table thead th[aria-sort]:not([aria-sort=none]) button{color:var(--ink)}.sort-ind{font-size:9px;min-width:14px;text-align:left}
+.race-table tbody tr.race-row{cursor:pointer}.race-table tbody tr.race-row:hover td{background:var(--hover)}.race-table td:first-child{position:sticky;left:0;z-index:1;background:var(--card)}.race-table thead th:first-child{left:0;z-index:4}.race-table tr.race-row:hover td:first-child{background:var(--hover)}
+.race-name{display:flex;align-items:center;gap:6px}.race-name button{all:unset;cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:6px}.race-name button:focus-visible{outline:2px solid #3697c9;outline-offset:2px}.caret{display:inline-block;transition:transform .12s;font-size:9px;color:var(--muted)}.is-open .caret{transform:rotate(90deg)}
+.badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:bold;background:var(--surface);border:1px solid var(--line);color:var(--muted)}.badge.tip{color:var(--blue);border-color:var(--blue)}
+.matchup{font-size:12px;max-width:230px;overflow:hidden;text-overflow:ellipsis}.num{font-variant-numeric:tabular-nums}.prob{font-weight:bold}.prob small{font-weight:normal;color:var(--muted);display:block;font-size:9px}.na{color:var(--muted)}
+.outlook{display:inline-block;min-width:62px;text-align:center;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:bold;border:1px solid currentColor}.outlook.d{color:var(--blue)}.outlook.r{color:var(--red)}.outlook.t{color:var(--muted)}
+.race-table td.spark{padding:2px 9px}.race-table .detail-row td{padding:0;background:var(--surface);white-space:normal;text-align:left}.detail-row .tile{margin:12px 0 12px 12px;box-shadow:none;position:sticky;left:12px;width:min(1000px,calc(100vw - 84px));max-width:calc(100vw - 84px)}.detail-row .chart{height:260px}.detail-row .tile-header h3{margin:0 0 6px}
+.race-table .empty-row td{text-align:center;padding:26px;color:var(--muted)}.table-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}
+@media(max-width:600px){.table-controls .search{width:100%}.table-controls label{flex:1 1 auto}}
 </style>
 </head>
 <body>
@@ -43,8 +57,19 @@ button:hover,.race-dial:hover{background:var(--hover)}a{color:var(--link)}.dial-
 <section class="temperature-strip" id="summary" aria-label="Congressional probability dials"></section>
 <div class="top-grid"><section><div class="section-head"><h2>Generic Ballot</h2></div>
 <div class="grid" id="polls"></div></section><section><div class="section-head"><h2>Senate Overall</h2><div class="range-anchor" id="rangeAnchor"><label class="range-control" id="rangeControl">Range <select id="historyRange" aria-label="Range for all dashboard plots"><option value="7">7D</option><option value="30">30D</option><option value="90" selected>90D</option><option value="365">1Y</option><option value="0">All</option></select></label></div></div><div class="grid" id="controlPlot"></div></section></div>
-<div class="section-head"><div><h2>Senate Races</h2></div><div class="controls"><input id="search" class="search" type="search" placeholder="Find a race…" aria-label="Filter the top ten races"><select id="sort" aria-label="Sort Senate races"><option value="close">Closest first</option><option value="gap">Biggest market gap</option><option value="name">State A–Z</option></select></div></div>
-<div class="grid senate-grid" id="races"></div>
+<section class="race-table-section" aria-label="Senate race table"><div class="section-head"><div><h2>Senate Races</h2><div class="table-sub" id="tableCount"></div></div></div>
+<div class="table-controls" role="search">
+<input id="search" class="search" type="search" placeholder="Find a state or candidate…" aria-label="Filter races by state or candidate">
+<label>Outlook <select id="fOutlook" aria-label="Filter by outlook"><option value="">All</option><option value="Likely D">Likely D (≥80%)</option><option value="Lean D">Lean D (60–80%)</option><option value="Toss-up">Toss-up (40–60%)</option><option value="Lean R">Lean R (20–40%)</option><option value="Likely R">Likely R (&lt;20%)</option></select></label>
+<label>Source gap <select id="fGap" aria-label="Minimum gap between sources"><option value="0">Any</option><option value="3">≥ 3 pp</option><option value="5">≥ 5 pp</option><option value="10">≥ 10 pp</option><option value="20">≥ 20 pp</option></select></label>
+<label>D win % <input id="fMin" type="number" min="0" max="100" placeholder="min" aria-label="Minimum average Democratic win probability"> – <input id="fMax" type="number" min="0" max="100" placeholder="max" aria-label="Maximum average Democratic win probability"></label>
+<label class="check"><input id="fSpecial" type="checkbox"> Specials only</label>
+<label class="check"><input id="fPlot" type="checkbox"> With price history</label>
+<label>Preset <select id="sortPreset" aria-label="Sort preset"><option value="close">Closest first</option><option value="dem">Most Democratic</option><option value="rep">Most Republican</option><option value="gap">Biggest source gap</option><option value="move">Biggest 7-day move</option><option value="volume">Kalshi volume</option><option value="name">State A–Z</option></select></label>
+<button type="button" id="expandAll">Expand all plots</button><button type="button" id="resetFilters">Reset</button><button type="button" id="exportCsv">Export CSV</button>
+</div>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Senate races table; scroll horizontally for more columns"><table class="race-table" id="raceTable"><thead></thead><tbody id="races"></tbody></table></div>
+<div class="table-note">D win % = probability the non-Republican wins (Nebraska: independent Dan Osborn). Cell shading scales with distance from 50%. Source gap = highest minus lowest source. 7-day move averages Kalshi and Polymarket. Sparkline: Kalshi (green) and Polymarket (purple), 0–100% D win probability, dashed line at 50%, over the selected range. Click a header to sort (Shift-click to add a secondary sort); click a row for the full plot. State-level polling averages are not published by the sources here; the national generic ballot above is the only poll series.</div></section>
 <details id="method"><summary>Sources, freshness & how to read these charts</summary><p><b>Polling is vote share. Market prices are implied win probabilities.</b> The two measures answer different questions and should not be interpreted as the same scale.</p><ul><li><a href="https://www.natesilver.net/p/generic-ballot-average-2026-nate-silver-bulletin-congress-polls" target="_blank" rel="noopener">Silver Bulletin</a>: published Datawrapper CSV feed; daily Democratic and Republican average, without reweighting. This is the headline average, not a separate likely-voter-only series.</li><li><a href="https://fiftyplusone.news/polls/generic-ballot/generic-ballot" target="_blank" rel="noopener">FiftyPlusOne</a>: public chart JSON, “All polls” series. Its commercial bulk API is separate and requires access.</li><li><a href="https://docs.kalshi.com/getting_started/quick_start_market_data" target="_blank" rel="noopener">Kalshi public REST API</a>: Republican-party contracts for 2026. Current probability is the midpoint of a usable YES bid and ask; daily history is the closing bid/ask midpoint. Quotes without a usable two-sided book are excluded.</li><li><a href="https://docs.polymarket.com/market-data/discover-markets" target="_blank" rel="noopener">Polymarket Gamma API</a>: Republican-party YES outcome price. Daily history comes from its CLOB prices-history API. Market rules, liquidity and sampling can differ between exchanges. Alaska’s Polymarket Democratic probability and history quote Mary Peltola’s YES contract directly; opposing-side values use its complement. Kalshi uses its Republican-party contract. Contract rules differ between the exchanges. <a href="https://www.elections.alaska.gov/candidates/?election=26genr" target="_blank" rel="noopener">Alaska’s official ballot</a> identifies the candidates and parties.</li><li><b>DDHQ:</b> daily Democratic and Republican estimates from the public 2026 generic-ballot chart (all-voter population mix). <a href="https://embeds-2026.ddhq.io/methodology" target="_blank" rel="noopener">Methodology</a>.</li><li><b>Model forecasts:</b> <a href="https://fiftyplusone.news/forecast/senate" target="_blank" rel="noopener">FiftyPlusOne</a> public chart JSON supplies race and chamber-control probabilities. These are model estimates, separate from market prices. Historical observations are recorded from the first successful retrieval; no earlier history is fabricated. Nebraska uses I for Dan Osborn on the non-Republican side.</li><li><b>House dial:</b> direct House-control contracts from Kalshi (CONTROLH-2026-R) and Polymarket (“Which party will win the House in 2026?”). Each needle shows its exchange’s probability, not the generic ballot.</li><li><b>Senate control:</b> direct 2026 chamber-control contracts from each exchange, not a calculation from individual race probabilities. Kalshi uses CONTROLS-2026-R; Polymarket uses the Republican Party YES contract in “Which party will win the Senate in 2026?”. Democratic values use the opposite side. See each contract for tie-breaking, independent-caucus and settlement rules.</li><li><b>Selection:</b> discover the 2026 U.S. Senate general-election contracts, match states with usable Republican quotes on both exchanges (Alaska uses Mary Peltola’s Democratic candidate contract), and sort by mean(|Kalshi − 50|, |Polymarket − 50|). Take the first ten. This avoids calling a large exchange disagreement a close race merely because its mean is 50. Independents are not counted as Democrats. Florida and Ohio are special elections.</li><li><b>Dial order and tipping point:</b> the ten selected state dials run from highest to lowest mean Democratic win probability across available sources, equally weighted. The headline above each dial shows the equal-weight average across available predictors, rounded to a whole percent; source estimates remain separate below it. Independent wins do not count as Democratic wins. The small blue corner indicator (labeled “D tipping point” on hover) marks the 17th race in that same ordering across all 35 contests: 34 Democratic-caucus seats not up plus 17 wins reaches 51. It is a probability-order threshold, not a model estimate of which race most often tips control in simulations. It is recalculated on every refresh and omitted if coverage is incomplete.</li><li><b>Display:</b> Senate values show the leading side’s full win probability: D 65% means a 65% Democratic chance and R 54% means a 54% Republican chance. A tied market reads 50–50. These are win probabilities, not vote-share margins. Blue denotes Democratic advantages; red denotes Republican advantages. Kalshi is solid and Polymarket is dashed. Nebraska uses I for an independent advantage. <br><b>Range:</b> daily samples for up to 90 days, plus the latest quote. Missing history is never fabricated; a dot means only one observation is available. Tap, hover or focus a chart and use ← / → for values. Tap a legend swatch to hide a line; publisher names open the market. Drag across a chart to zoom; double-click to reset.</li><li><b>Freshness:</b> retrieval times mean the API was queried then, not that a trade occurred then. Dates on ballot tiles are model dates. Old and failed sources are visibly labeled. A failed refresh retains the last successful data; it never generates sample values.</li></ul><p id="coverage"></p><div id="errors" class="error-list"></div></details>
 <footer class="bottom"><span>THE MIDTERM DESK / 2026</span><span>Public data · no keys required · no trading connections</span></footer>
 </div>
@@ -140,10 +165,7 @@ $('summary').addEventListener('click',e=>{
  const link=e.target.closest('.dial-plot-link');
  if(!link||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
  e.preventDefault();
- const id=link.getAttribute('href').slice(1);
- if(!$(id)){$('search').value='';render();}
- const target=$(id);
- if(target){history.replaceState(null,'','#'+id);target.focus({preventScroll:true});target.scrollIntoView({block:'start',behavior:'instant'});}
+ openRace(link.getAttribute('href').slice(1).replace('race-',''));
 });
 
 function render(){
@@ -166,17 +188,7 @@ function render(){
  renderControl();
  const paired=data.coverage?.paired??data.races.length;
 
- let races=data.races.slice(0,10),query=$('search').value.toLowerCase();
- races=races.filter(r=>(r.name+' '+r.state).toLowerCase().includes(query));
- if($('sort').value==='gap')races.sort((a,b)=>Math.abs(b.kalshi.p-b.polymarket.p)-Math.abs(a.kalshi.p-a.polymarket.p));
- if($('sort').value==='name')races.sort((a,b)=>a.name.localeCompare(b.name));
- $('races').innerHTML='';
- for(const r of races){const tile=document.createElement('article');tile.className='tile senate';tile.id='race-'+r.state;tile.tabIndex=-1;
-  tile.innerHTML=`<div class="tile-header"><div><h3>${esc(r.name)}</h3><div class="candidates">${(r.candidates||[]).map(c=>`<span class="party-${c.party.toLowerCase()}">${esc(c.name)} (${esc(c.party)})</span>`).join('<span class="versus"> · </span>')}</div></div></div><div class="readout">${probabilityReadout(r,r.state==='NE'?'I':'D')}</div><div class="chart"></div>${probabilityNotes(r)?`<div class="chart-help">${probabilityNotes(r)}</div>`:''}${r.kalshi.historyError||r.polymarket.historyError?'<div class="chart-help">Some history unavailable · current quotes shown</div>':''}<div class="tile-footer"><div class="legend"></div></div>`;
-  $('races').append(tile);
-  chart(tile,probabilitySeries(r),{days:historyDays,type:'market',positive:r.state==='NE'?'I':'D'});
- }
- if(!races.length)$('races').innerHTML='<div class="empty">No matching race in the current top ten.</div>';
+ renderTable();
  $('coverage').textContent=`Coverage: ${data.coverage?.kalshi??0} Kalshi races; ${data.coverage?.polymarket??0} Polymarket races; ${paired} matched, out of ${data.coverage?.total??34} 2026 Senate races. Only matched races are eligible for the top ten. Missing Kalshi: ${(data.coverage?.missingKalshi||[]).join(', ')||'none'}. Missing Polymarket: ${(data.coverage?.missingPolymarket||[]).join(', ')||'none'}. Model coverage: ${['fifty'].map(source=>probabilitySources[source].name+' '+Object.keys(data.forecasts?.[source]?.races||{}).length+' races').join('; ')}.`;
  $('errors').textContent=(data.errors||[]).join('\n');
  const messages=[];
@@ -251,7 +263,147 @@ document.addEventListener('pointerdown',e=>{if(activeChart&&!activeChart.host.co
 $('historyRange').onchange=e=>{historyDays=+e.target.value;render();};
 const rangeObserver=new IntersectionObserver(([entry])=>{$('rangeControl').classList.toggle('is-floating',!entry.isIntersecting&&entry.boundingClientRect.top<12);},{rootMargin:'-12px 0px 0px 0px'});
 rangeObserver.observe($('rangeAnchor'));
-$('sort').onchange=render;$('search').oninput=render;
+
+const STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+const TABLE_SOURCES=['kalshi','polymarket','fifty'];
+const outlookOf=d=>d===null?null:d>=80?'Likely D':d>=60?'Lean D':d>40?'Toss-up':d>20?'Lean R':'Likely R';
+const outlookClass=o=>/ D$/.test(o)?'d':/ R$/.test(o)?'r':'t';
+const dSide=q=>Number.isFinite(q?.p)?(Number.isFinite(q.d)?q.d:100-q.p):null;
+const tableState={sort:[{key:'close',dir:1}]};const expanded=new Set();let detailCharts=[];
+function raceRows(){
+ const universe=new Map(data.races.map(r=>[r.state,{...r}])),tipping=dialOrder().tipping;
+ for(const [state,q]of Object.entries(data.forecasts?.fifty?.races||{}))if(!universe.has(state))universe.set(state,{state,name:STATE_NAMES[state]||state,candidates:[],fifty:q});
+ return [...universe.values()].map(r=>{
+  const v={};for(const s of TABLE_SOURCES)v[s]=dSide(r[s]);
+  const have=TABLE_SOURCES.map(s=>v[s]).filter(Number.isFinite),avg=have.length?have.reduce((a,b)=>a+b,0)/have.length:null;
+  const moves=['kalshi','polymarket'].map(s=>{const h=(r[s]?.history||[]).filter(p=>Number.isFinite(p[1]));if(h.length<2)return null;const end=h.at(-1),ref=h.filter(p=>p[0]<=end[0]-7*DAY).at(-1);return ref?(100-end[1])-(100-ref[1]):null;}).filter(Number.isFinite);
+  const dem=r.candidates?.find(c=>c.party==='D')||r.candidates?.find(c=>c.party==='I'),rep=r.candidates?.find(c=>c.party==='R');
+  return {r,state:r.state,name:r.name||STATE_NAMES[r.state]||r.state,special:!!r.special,tipping:r.state===tipping,v,avg,
+   gap:have.length>1?Math.max(...have)-Math.min(...have):null,move:moves.length?moves.reduce((a,b)=>a+b,0)/moves.length:null,
+   close:avg===null?null:Math.abs(avg-50),outlook:outlookOf(avg),volume:r.kalshi?.volume24h??null,
+   hasHistory:['kalshi','polymarket'].some(s=>(r[s]?.history?.length||0)>1),
+   matchup:(r.candidates||[]).map(c=>`${c.name} (${c.party})`).join(' vs '),dem,rep,
+   candidates:`${dem?dem.name+' ('+dem.party+')':'—'} vs ${rep?rep.name+' (R)':'—'}`};
+ });
+}
+const TABLE_COLUMNS=[
+ {key:'name',label:'State',left:true,get:x=>x.name},
+ {key:'matchup',label:'Matchup',left:true,get:x=>x.matchup,sortable:true},
+ {key:'outlook',label:'Outlook',get:x=>x.avg,center:true},
+ {key:'avg',label:'Avg D win %',get:x=>x.avg},
+ {key:'kalshi',label:'Kalshi',get:x=>x.v.kalshi},
+ {key:'polymarket',label:'Polymarket',get:x=>x.v.polymarket},
+ {key:'fifty',label:'FiftyPlusOne',get:x=>x.v.fifty},
+ {key:'gap',label:'Source gap',get:x=>x.gap},
+ {key:'move',label:'7d move',get:x=>x.move},
+ {key:'close',label:'Margin',get:x=>x.close,hint:'Distance from 50–50 (pp)'},
+ {key:'volume',label:'Kalshi 24h vol',get:x=>x.volume},
+ {key:'spark',label:'Price history',get:x=>null,nosort:true}
+];
+const ASC_FIRST=new Set(['name','matchup','close']);
+const PRESETS={close:[['close',1]],dem:[['avg',-1]],rep:[['avg',1]],gap:[['gap',-1]],move:[['move',-1]],volume:[['volume',-1]],name:[['name',1]]};
+function sortRows(rows){
+ const cols=Object.fromEntries(TABLE_COLUMNS.map(c=>[c.key,c]));
+ return rows.sort((a,b)=>{for(const {key,dir}of tableState.sort){const c=cols[key];if(!c)continue;let x=c.get(a),y=c.get(b);const nx=x===null||x===undefined||Number.isNaN(x),ny=y===null||y===undefined||Number.isNaN(y);if(nx||ny){if(nx&&ny)continue;return nx?1:-1;}const r=typeof x==='string'?x.localeCompare(y):x-y;if(r)return r*dir;}return a.name.localeCompare(b.name);});
+}
+function filterRows(rows){
+ const q=$('search').value.trim().toLowerCase(),o=$('fOutlook').value,gap=+$('fGap').value,mn=$('fMin').value,mx=$('fMax').value;
+ return rows.filter(x=>{
+  if(q&&!(x.name+' '+x.state+' '+x.matchup).toLowerCase().includes(q))return false;
+  if(o&&x.outlook!==o)return false;
+  if(gap&&!(x.gap>=gap))return false;
+  if(mn!==''&&!(x.avg>=+mn))return false;
+  if(mx!==''&&!(x.avg<=+mx))return false;
+  if($('fSpecial').checked&&!x.special)return false;
+  if($('fPlot').checked&&!x.hasHistory)return false;
+  return true;
+ });
+}
+const shade=(v)=>{if(!Number.isFinite(v))return '';const a=Math.min(60,Math.abs(v-50)*1.2);return `background:color-mix(in srgb,${v>=50?'var(--blue)':'var(--red)'} ${a.toFixed(0)}%,transparent)`;};
+const probCell=(v,q,flag)=>Number.isFinite(v)?`<td class="num prob" style="${shade(v)}">${v.toFixed(1)}%${q&&sourceStale(q)?'<small>stale</small>':''}</td>`:'<td class="na">—</td>';
+function spark(x){
+ const W=120,H=30,series=['kalshi','polymarket'].map(s=>({s,pts:(x.r[s]?.history||[]).filter(p=>Number.isFinite(p[1])).map(p=>[p[0],100-p[1]])})).filter(s=>s.pts.length>1);
+ if(!series.length)return '<span class="na">—</span>';
+ const end=Math.max(...series.map(s=>s.pts.at(-1)[0])),start=historyDays?end-historyDays*DAY:Math.min(...series.map(s=>s.pts[0][0]));
+ const px=t=>2+(t-start)/(end-start||1)*(W-4),py=v=>2+(100-v)/100*(H-4);
+ const paths=series.map(({s,pts})=>{const vis=pts.filter(p=>p[0]>=start);return vis.length>1?`<path d="${vis.map((p,i)=>(i?'L':'M')+px(p[0]).toFixed(1)+','+py(p[1]).toFixed(1)).join('')}" fill="none" stroke="${s==='kalshi'?C.k:C.p}" stroke-width="1.6"/>`:'';}).join('');
+ const label=series.map(({s,pts})=>`${probabilitySources[s].name} ${pts.at(-1)[1].toFixed(0)}% D`).join(', ');
+ return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Democratic win probability history: ${esc(label)}"><title>${esc(label)}</title><line x1="0" x2="${W}" y1="${py(50)}" y2="${py(50)}" stroke="var(--muted)" stroke-dasharray="2 3" stroke-width=".8"/>${paths}</svg>`;
+}
+function renderTableHead(){
+ const idx=Object.fromEntries(tableState.sort.map((s,i)=>[s.key,{...s,n:i+1}]));
+ $('raceTable').tHead.innerHTML='<tr>'+TABLE_COLUMNS.map(c=>{
+  if(c.nosort)return `<th scope="col" class="${c.left?'l':''}"><button type="button" disabled style="cursor:default">${c.label}</button></th>`;
+  const s=idx[c.key];return `<th scope="col" class="${c.left?'l':''}" aria-sort="${s?(s.dir>0?'ascending':'descending'):'none'}"><button type="button" data-sort="${c.key}" ${c.hint?`title="${esc(c.hint)}"`:''}>${c.label}<span class="sort-ind">${s?(s.dir>0?'▲':'▼')+(tableState.sort.length>1?s.n:''):''}</span></button></th>`;
+ }).join('')+'</tr>';
+}
+function cleanupDetailCharts(){for(const {host,draw}of detailCharts){chartResize.unobserve(host);charts=charts.filter(f=>f!==draw);}detailCharts=[];activeChart?.dismiss();}
+function renderTable(){
+ cleanupDetailCharts();renderTableHead();
+ const all=raceRows(),rows=sortRows(filterRows(all)),body=$('races'),n=TABLE_COLUMNS.length;
+ $('tableCount').textContent=`Showing ${rows.length} of ${all.length} 2026 Senate races · ${all.filter(x=>x.hasHistory).length} with price history`;
+ body.innerHTML='';
+ if(!rows.length){body.innerHTML=`<tr class="empty-row"><td colspan="${n}">No races match these filters.</td></tr>`;return;}
+ const html=[];
+ for(const x of rows){
+  const open=expanded.has(x.state),r=x.r,ind=r.state==='NE';
+  html.push(`<tr class="race-row ${open?'is-open':''}" id="race-${esc(x.state)}" data-state="${esc(x.state)}" tabindex="-1"><td><div class="race-name"><button type="button" aria-expanded="${open}" aria-controls="detail-${esc(x.state)}" aria-label="Toggle ${esc(x.name)} plot"><span class="caret">▶</span>${esc(x.name)}</button>${x.special?'<span class="badge">SPECIAL</span>':''}${x.tipping?'<span class="badge tip" title="D tipping point">TIPPING</span>':''}</div></td>`+
+   `<td class="l matchup" title="${esc(x.matchup)}">${(r.candidates||[]).length?(r.candidates||[]).map(c=>`<span class="party-${c.party.toLowerCase()}">${esc(c.name)} (${esc(c.party)})</span>`).join(' · '):'<span class="na">—</span>'}</td>`+
+   `<td>${x.outlook?`<span class="outlook ${outlookClass(x.outlook)}">${x.outlook}</span>`:'<span class="na">—</span>'}</td>`+
+   `<td class="num prob" style="${shade(x.avg)}">${Number.isFinite(x.avg)?x.avg.toFixed(1)+'%':'—'}</td>`+
+   TABLE_SOURCES.map(s=>probCell(x.v[s],r[s])).join('')+
+   `<td class="num">${x.gap===null?'<span class="na">—</span>':x.gap.toFixed(1)+' pp'}</td>`+
+   `<td class="num">${x.move===null?'<span class="na">—</span>':`<span style="color:${x.move>0.05?C.d:x.move<-0.05?C.r:'var(--muted)'}">${x.move>0?'+':''}${x.move.toFixed(1)} pp</span>`}</td>`+
+   `<td class="num">${x.close===null?'<span class="na">—</span>':x.close.toFixed(1)}</td>`+
+   `<td class="num">${x.volume===null?'<span class="na">—</span>':'$'+Math.round(x.volume).toLocaleString('en-US')}</td>`+
+   `<td class="spark">${spark(x)}</td></tr>`);
+  if(open)html.push(`<tr class="detail-row" id="detail-${esc(x.state)}"><td colspan="${n}"></td></tr>`);
+ }
+ body.innerHTML=html.join('');
+ for(const x of rows)if(expanded.has(x.state))fillDetail(x);
+ colorPartyText();
+}
+function fillDetail(x){
+ const r=x.r,cell=$('detail-'+x.state)?.firstElementChild;if(!cell)return;
+ const tile=document.createElement('article');tile.className='tile senate';
+ tile.innerHTML=`<div class="tile-header"><div><h3>${esc(x.name)}</h3><div class="candidates">${(r.candidates||[]).map(c=>`<span class="party-${c.party.toLowerCase()}">${esc(c.name)} (${esc(c.party)})</span>`).join('<span class="versus"> · </span>')}</div></div></div><div class="readout">${probabilityReadout(r,r.state==='NE'?'I':'D')}</div><div class="chart"></div>${probabilityNotes(r)?`<div class="chart-help">${probabilityNotes(r)}</div>`:''}${r.kalshi?.historyError||r.polymarket?.historyError?'<div class="chart-help">Some history unavailable · current quotes shown</div>':''}<div class="tile-footer"><div class="legend"></div></div>`;
+ cell.append(tile);
+ chart(tile,probabilitySeries(r),{days:historyDays,type:'market',positive:r.state==='NE'?'I':'D'});
+ const host=tile.querySelector('.chart');detailCharts.push({host,draw:host.drawChart});
+}
+function toggleRace(state,force){
+ const on=force??!expanded.has(state);on?expanded.add(state):expanded.delete(state);renderTable();
+ if(on)$('race-'+state)?.scrollIntoView({block:'nearest'});
+}
+function openRace(state){
+ if(!$('race-'+state)){resetFilters(false);}
+ toggleRace(state,true);
+ const row=$('race-'+state);if(row){history.replaceState(null,'','#race-'+state);row.focus({preventScroll:true});row.scrollIntoView({block:'start',behavior:'instant'});}
+}
+function resetFilters(redraw=true){
+ $('search').value='';$('fOutlook').value='';$('fGap').value='0';$('fMin').value='';$('fMax').value='';$('fSpecial').checked=false;$('fPlot').checked=false;$('sortPreset').value='close';
+ tableState.sort=[{key:'close',dir:1}];if(redraw)renderTable();
+}
+function exportCsv(){
+ const rows=sortRows(filterRows(raceRows())),q=v=>`"${String(v??'').replace(/"/g,'""')}"`,f=v=>Number.isFinite(v)?v.toFixed(2):'';
+ const lines=[['State','Name','Special','Matchup','Outlook','Avg D win %','Kalshi D %','Polymarket D %','FiftyPlusOne D %','Source gap (pp)','7d move (pp)','Kalshi 24h volume'].map(q).join(',')];
+ for(const x of rows)lines.push([x.state,x.name,x.special?'yes':'no',x.matchup,x.outlook,f(x.avg),f(x.v.kalshi),f(x.v.polymarket),f(x.v.fifty),f(x.gap),f(x.move),x.volume??''].map(q).join(','));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));a.download='midterm-desk-senate-races.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('raceTable').addEventListener('click',e=>{
+ const th=e.target.closest('button[data-sort]');
+ if(th){const key=th.dataset.sort,i=tableState.sort.findIndex(s=>s.key===key);
+  if(e.shiftKey){if(i>=0)tableState.sort[i].dir*=-1;else tableState.sort.push({key,dir:ASC_FIRST.has(key)?1:-1});}
+  else tableState.sort=[{key,dir:i===0?-tableState.sort[0].dir:(ASC_FIRST.has(key)?1:-1)}];
+  $('sortPreset').value='';renderTable();return;}
+ if(e.target.closest('a,svg a'))return;
+ const row=e.target.closest('tr.race-row');if(row)toggleRace(row.dataset.state);
+});
+$('sortPreset').onchange=e=>{if(PRESETS[e.target.value]){tableState.sort=PRESETS[e.target.value].map(([key,dir])=>({key,dir}));renderTable();}};
+for(const id of ['search','fMin','fMax'])$(id).oninput=renderTable;
+for(const id of ['fOutlook','fGap','fSpecial','fPlot'])$(id).onchange=renderTable;
+$('resetFilters').onclick=()=>resetFilters();$('exportCsv').onclick=exportCsv;
+$('expandAll').onclick=()=>{const rows=sortRows(filterRows(raceRows())),all=rows.every(x=>expanded.has(x.state));for(const x of rows)all?expanded.delete(x.state):expanded.add(x.state);$('expandAll').textContent=all?'Expand all plots':'Collapse all plots';renderTable();};
 async function api(url,json=true){const r=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(url==='/api/refresh'?180000:25000)});if(!r.ok)throw Error('HTTP '+r.status);return json?r.json():r.text();}
 function unflatten(a){const seen=new Map();function d(i){if(i<0)return null;if(seen.has(i))return seen.get(i);const v=a[i];if(Array.isArray(v)&&['Reactive','ShallowReactive','Ref','ShallowRef'].includes(v[0]))return d(v[1]);if(v&&typeof v==='object'){const z=Array.isArray(v)?[]:{};seen.set(i,z);for(const [k,n]of Object.entries(v))z[k]=d(n);return z;}return v;}return d(0);}
 async function directRefresh(){

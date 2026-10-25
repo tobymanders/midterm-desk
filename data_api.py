@@ -278,7 +278,7 @@ def collect(previous=None):
         now = int(time.time())
         with cf.ThreadPoolExecutor(max_workers=5) as pool:
             futures = {pool.submit(history, source, race[source], now): (race, source)
-                for race in result['races'][:10] for source in ('kalshi', 'polymarket')}
+                for race in result['races'] for source in ('kalshi', 'polymarket')}
             for f in cf.as_completed(futures):
                 race, source = futures[f]
                 try: f.result()
