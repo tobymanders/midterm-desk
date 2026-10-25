@@ -15,8 +15,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         global CACHE, LAST_REFRESH
         path = self.path.split('?', 1)[0]
-        if path in ('/', '/dashboard.html'):
-            html = (ROOT / 'dashboard.template.html').read_text().replace('__SNAPSHOT__', json.dumps(CACHE).replace('<', '\\u003c'))
+        if path in ('/', '/dashboard.html', '/v2', '/v2/'):
+            template = 'dashboard.v2.template.html' if path.startswith('/v2') else 'dashboard.template.html'
+            html = (ROOT / template).read_text().replace('__SNAPSHOT__', json.dumps(CACHE).replace('<', '\\u003c'))
             self.reply(html.encode(), 'text/html; charset=utf-8')
         elif path == '/api/status':
             self.reply(b'{"service":"midterm-desk"}', 'application/json')
