@@ -12,6 +12,7 @@ import urllib.parse
 from pathlib import Path
 from poll_sources import DDHQ_API, DDHQ_URL, ddhq_points
 from forecast_sources import load_forecast, retain_history
+from state_polls import load_state_polls
 
 KALSHI = 'https://api.elections.kalshi.com/trade-api/v2'
 POLY = 'https://gamma-api.polymarket.com'
@@ -262,6 +263,15 @@ def collect(previous=None):
                     cached = json.loads(json.dumps(cached))
                     for q in [cached['control'], cached['house'], *cached['races'].values()]: q['stale'] = True
                     result['forecasts'][source] = cached
+    try:
+        result['statePolls'], errors = load_state_polls(fetch, iso())
+        result['errors'].extend('state polls ' + e for e in errors)
+        for state, old in previous.get('statePolls', {}).items():
+            if state not in result['statePolls'] and any(e.startswith('state polls ') for e in errors):
+                result['statePolls'][state] = dict(old, stale=True)
+    except Exception as e:
+        result['errors'].append(f'state polls: {e}')
+        result['statePolls'] = {s: dict(q, stale=True) for s, q in previous.get('statePolls', {}).items()}
     result['coverage'] = {'kalshi': len(k), 'polymarket': len(p), 'paired': len(k.keys() & p.keys()), 'total': len(STATES), 'missingKalshi': sorted(set(STATES) - set(k)), 'missingPolymarket': sorted(set(STATES) - set(p))}
     # Never mix one fresh platform with an old platform for the ranking.
     if not k or not p:
