@@ -48,6 +48,21 @@ button:hover,.race-dial:hover{background:var(--hover)}a{color:var(--link)}.dial-
 .poll-gap{text-decoration:none;display:block;line-height:1.2}.poll-gap:hover b{text-decoration:underline}.poll-gap small{display:block;font-size:9px;color:var(--muted)}
 .race-table .empty-row td{text-align:center;padding:26px;color:var(--muted)}.table-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}
 @media(max-width:600px){.table-controls .search{width:100%}.table-controls label{flex:1 1 auto}}
+
+/* v2: tipping-point label, model-vs-market scatter, state polling bars. */
+.dial-tipping{width:auto;height:auto;padding:2px 5px;border-radius:3px;background:var(--blue);color:var(--card);font-size:8px;line-height:1.2;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.race-dial[data-tipping=true]{padding-top:26px}
+.scatter-section,.statepoll-section{margin-top:27px;min-width:0}
+.scatter-chart{height:440px;margin:6px 12px 12px}.scatter-chart svg{width:100%;height:100%;display:block;overflow:visible}
+.sc-dot{cursor:pointer}.sc-dot:focus-visible{outline:none;stroke:var(--ink);stroke-width:2.5}
+.sc-legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 23px 0;font-size:11px;color:var(--muted)}.sc-legend span{display:inline-flex;align-items:center;gap:6px}.sc-legend i{display:inline-block;width:10px;height:10px;border-radius:50%}.sc-legend b{display:inline-block;width:16px;height:3px;border-radius:2px}
+.statepolls{padding:6px 23px 18px}
+.sp-row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:130px minmax(60px,1fr) minmax(120px,1.4fr) 62px;gap:12px;align-items:center;width:100%;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer}
+.sp-row:last-child{border-bottom:0}.sp-row:hover{background:var(--hover)}.sp-row:focus-visible{outline:2px solid #3697c9;outline-offset:-2px}
+.sp-row svg{display:block;width:100%;height:24px}
+.sp-zero{position:relative;height:12px}.sp-zero:before{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--muted)}.sp-zero span{position:absolute;top:0;bottom:0;border-radius:3px}
+.sp-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:bold}
+@media(max-width:600px){.scatter-chart{height:340px;margin-left:4px;margin-right:4px}.sp-row{grid-template-columns:96px minmax(40px,1fr) minmax(70px,1fr) 52px;gap:8px}.statepolls{padding-left:14px;padding-right:14px}.sc-legend{margin-left:18px}}
 </style>
 </head>
 <body>
@@ -58,6 +73,10 @@ button:hover,.race-dial:hover{background:var(--hover)}a{color:var(--link)}.dial-
 <section class="temperature-strip" id="summary" aria-label="Congressional probability dials"></section>
 <div class="top-grid"><section><div class="section-head"><h2>Generic Ballot</h2></div>
 <div class="grid" id="polls"></div></section><section><div class="section-head"><h2>Senate Overall</h2><div class="range-anchor" id="rangeAnchor"><label class="range-control" id="rangeControl">Range <select id="historyRange" aria-label="Range for all dashboard plots"><option value="7">7D</option><option value="30">30D</option><option value="90" selected>90D</option><option value="365">1Y</option><option value="0">All</option></select></label></div></div><div class="grid" id="controlPlot"></div></section></div>
+<section class="scatter-section" aria-label="Model versus market"><div class="section-head"><div><h2>Model vs Market</h2><div class="table-sub">Democratic win probability per Senate race: FiftyPlusOne model (horizontal) against the Kalshi and Polymarket average (vertical). Click a dot to open its row.</div></div></div>
+<article class="tile"><div class="sc-legend"><span><i style="background:var(--blue)"></i>Leans D (mean of model and market ≥ 50%)</span><span><i style="background:var(--red)"></i>Leans R</span><span><b style="background:var(--blue)"></b>Market more Democratic than model</span><span><b style="background:var(--red)"></b>Market less Democratic than model</span><span>Dashed diagonal: model = market</span></div><div class="chart scatter-chart" id="scatter"></div></article></section>
+<section class="statepoll-section" aria-label="State polling averages"><div class="section-head"><div><h2>State Polling</h2><div class="table-sub">Latest FiftyPlusOne Senate polling-average margin, Democrat (Nebraska: independent) minus Republican, with the trend over the selected range. Click a row to open its race.</div></div></div>
+<article class="tile"><div class="statepolls" id="statePolls"></div></article></section>
 <section class="race-table-section" aria-label="Senate race table"><div class="section-head"><div><h2>Senate Races</h2><div class="table-sub" id="tableCount"></div></div></div>
 <div class="table-controls" role="search">
 <input id="search" class="search" type="search" placeholder="Find a state or candidate…" aria-label="Filter races by state or candidate">
@@ -134,7 +153,7 @@ function dialMarkup(label,quotes,positive='D',tipping=false,state=null){
  const sources=availableSources(quotes);
  const readings=sources.map(source=>`${probabilitySources[source].name}: ${quotes[source].nonbinary?'D '+Math.round(quotes[source].d)+'%, R '+Math.round(quotes[source].p)+'%, independent balance '+Math.round(quotes[source].i)+'%':edgeLabel(50-quotes[source].p,positive)}`).join('; ');
  const needles=sources.filter(source=>!quotes[source].nonbinary).map(source=>{const probability=quotes[source].p,angle=Math.PI*probability/100,radius=48,x=64+radius*Math.cos(angle),y=72-radius*Math.sin(angle),color=partyColor(50-probability,positive);return `<g class="dial-needle" data-source="${source}" data-republican="${probability}" data-x="${x}"><line x1="64" y1="72" x2="${x}" y2="${y}" stroke="${color}" stroke-width="2"/></g>`;}).join('');
- return `${tipping?'<span class="dial-tipping" role="img" aria-label="D tipping point" title="D tipping point: Democrats’ 17th race win in probability order plus 34 holdover caucus seats reaches 51."></span>':''}${state?`<a class="dial-plot-link" href="#race-${esc(state)}" aria-label="View ${esc(label)} full state plot">`:''}<div class="dial-title">${esc(label)}</div><span class="dial-average" style="color:${average.color}">${average.label}</span><svg class="temperature-dial" viewBox="0 0 128 100" role="img" aria-label="${esc(label+': Average '+average.label+'. '+readings+'. Republican on the left; '+names[positive]+' on the right.')}"${state?'':' tabindex="0"'}><title>${esc(readings)}</title><path d="M14 72 A50 50 0 0 1 64 22" fill="none" stroke="${C.r}" stroke-width="9"/><path d="M64 22 A50 50 0 0 1 114 72" fill="none" stroke="${positive==='I'?'var(--muted)':C.d}" stroke-width="9"/><path d="M64 13 V30" stroke="var(--muted)" stroke-width="1"/>${needles}<circle cx="64" cy="72" r="3" fill="var(--ink)"/><text x="14" y="92" text-anchor="middle" fill="${C.r}" font-size="10">R</text><text x="114" y="92" text-anchor="middle" fill="${positive==='I'?'var(--muted)':C.d}" font-size="10">${positive}</text></svg>${state?'</a>':''}<div class="dial-quotes">${sources.map(source=>`<a href="${esc(quotes[source].url)}" target="_blank" rel="noopener" aria-label="${probabilitySources[source].name} ${esc(label)} probability"><span class="dial-source">${probabilitySources[source].short}</span> ${dialQuote(quotes[source],positive)}${sourceStale(quotes[source])?' <span class="stale">*</span>':''}</a>`).join('')||'<span>Unavailable</span>'}</div>`;
+ return `${tipping?'<span class="dial-tipping" role="img" aria-label="D tipping point" title="D tipping point: Democrats’ 17th race win in probability order plus 34 holdover caucus seats reaches 51.">Tipping point</span>':''}${state?`<a class="dial-plot-link" href="#race-${esc(state)}" aria-label="View ${esc(label)} full state plot">`:''}<div class="dial-title">${esc(label)}</div><span class="dial-average" style="color:${average.color}">${average.label}</span><svg class="temperature-dial" viewBox="0 0 128 100" role="img" aria-label="${esc(label+': Average '+average.label+'. '+readings+'. Republican on the left; '+names[positive]+' on the right.')}"${state?'':' tabindex="0"'}><title>${esc(readings)}</title><path d="M14 72 A50 50 0 0 1 64 22" fill="none" stroke="${C.r}" stroke-width="9"/><path d="M64 22 A50 50 0 0 1 114 72" fill="none" stroke="${positive==='I'?'var(--muted)':C.d}" stroke-width="9"/><path d="M64 13 V30" stroke="var(--muted)" stroke-width="1"/>${needles}<circle cx="64" cy="72" r="3" fill="var(--ink)"/><text x="14" y="92" text-anchor="middle" fill="${C.r}" font-size="10">R</text><text x="114" y="92" text-anchor="middle" fill="${positive==='I'?'var(--muted)':C.d}" font-size="10">${positive}</text></svg>${state?'</a>':''}<div class="dial-quotes">${sources.map(source=>`<a href="${esc(quotes[source].url)}" target="_blank" rel="noopener" aria-label="${probabilitySources[source].name} ${esc(label)} probability"><span class="dial-source">${probabilitySources[source].short}</span> ${dialQuote(quotes[source],positive)}${sourceStale(quotes[source])?' <span class="stale">*</span>':''}</a>`).join('')||'<span>Unavailable</span>'}</div>`;
 }
 function democraticChance(race){
  const independent=!!race.candidates?.some(c=>c.party==='I')&&!race.candidates?.some(c=>c.party==='D');
@@ -188,6 +207,7 @@ function render(){
   chart(pollTile,series,{days:historyDays,type:margin?'margin':'poll'});
  }
  renderControl();
+ renderScatter();renderStatePolls();
  const paired=data.coverage?.paired??data.races.length;
 
  renderTable();
@@ -208,6 +228,51 @@ function renderControl(){
  $('controlPlot').replaceChildren(tile);
  chart(tile,probabilitySeries(control),{days:historyDays,type:'market'});
 }
+
+
+function renderScatter(){
+ const host=$('scatter');host.querySelector('svg')?.remove();host.querySelector('.tip')?.remove();
+ const rows=raceRows().filter(x=>TABLE_SOURCES.every(s=>Number.isFinite(x.v[s]))).map(x=>{const market=(x.v.kalshi+x.v.polymarket)/2,model=x.v.fifty;return {state:x.state,name:x.name,market,model,gap:model-market,lean:(market+model)/2>=50?'D':'R',ind:x.state==='NE'};});
+ if(!rows.length){host.innerHTML='<div class="empty">Model and market data unavailable.</div>';return;}
+ host.insertAdjacentHTML('beforeend','<svg role="img" aria-label="Scatter of FiftyPlusOne model against market average Democratic win probability by Senate race"></svg><div class="tip"></div>');
+ const svg=host.querySelector('svg'),tip=host.querySelector('.tip');
+ function draw(){
+  const w=Math.max(280,host.clientWidth),h=Math.max(260,host.clientHeight),L=46,R=16,T=12,B=42,X=v=>L+v/100*(w-L-R),Y=v=>T+(100-v)/100*(h-T-B);
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);let out='';
+  for(const t of [0,20,40,60,80,100])out+=`<line x1="${L}" x2="${w-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${h-B}" stroke="var(--line)"/><text x="${L-8}" y="${Y(t)+3}" text-anchor="end" fill="var(--muted)" font-size="10">${t}%</text><text x="${X(t)}" y="${h-B+15}" text-anchor="middle" fill="var(--muted)" font-size="10">${t}%</text>`;
+  out+=`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+  out+=`<text x="${(L+w-R)/2}" y="${h-4}" text-anchor="middle" fill="var(--muted)" font-size="11">FiftyPlusOne model, Democratic win %</text><text transform="translate(11,${(T+h-B)/2}) rotate(-90)" text-anchor="middle" fill="var(--muted)" font-size="11">Market average, Democratic win %</text>`;
+  for(const r of rows)out+=`<line x1="${X(r.model)}" x2="${X(r.model)}" y1="${Y(r.model)}" y2="${Y(r.market)}" stroke="${r.gap<0?'var(--blue)':'var(--red)'}" stroke-width="2" stroke-linecap="round" opacity=".6"/>`;
+  for(const r of rows){
+   out+=`<circle class="sc-dot" data-state="${esc(r.state)}" tabindex="0" role="button" aria-label="${esc(`${r.name}: model ${r.model.toFixed(1)}%, market ${r.market.toFixed(1)}%, leans ${r.lean}`)}" cx="${X(r.model)}" cy="${Y(r.market)}" r="5.5" fill="${r.lean==='D'?(r.ind?'var(--muted)':'var(--blue)'):'var(--red)'}" stroke="var(--card)" stroke-width="1.5"/>`;
+   if(Math.abs(r.gap)>=8)out+=`<text x="${X(r.model)+9}" y="${Y(r.market)+3}" fill="var(--ink)" font-size="10" pointer-events="none">${esc(r.state)}</text>`;
+  }
+  svg.innerHTML=out;
+ }
+ const show=(el,e)=>{const r=rows.find(x=>x.state===el.dataset.state);if(!r)return;const box=host.getBoundingClientRect(),cb=el.getBoundingClientRect();
+  tip.innerHTML=`<b>${esc(r.name)}</b><br>Model ${r.model.toFixed(1)}%<br>Market ${r.market.toFixed(1)}%<br>Residual (market − model) ${(-r.gap>=0?'+':'')}${(-r.gap).toFixed(1)} pp<br>Leans ${r.lean}`;
+  tip.style.display='block';tip.style.top='8px';tip.style.left=Math.max(0,Math.min(box.width-tip.offsetWidth,cb.left-box.left+cb.width/2+12))+'px';};
+ host.onpointermove=e=>{const el=e.target.closest('.sc-dot');el?show(el,e):tip.style.display='none';};
+ host.onpointerleave=()=>{tip.style.display='none';};
+ host.onfocusin=e=>{const el=e.target.closest('.sc-dot');if(el)show(el,e);};host.onfocusout=()=>{tip.style.display='none';};
+ host.onclick=e=>{const el=e.target.closest('.sc-dot');if(el)openRace(el.dataset.state);};
+ host.onkeydown=e=>{const el=e.target.closest('.sc-dot');if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openRace(el.dataset.state);}};
+ host.drawChart=draw;charts.push(draw);chartResize.observe(host);draw();
+}
+function renderStatePolls(){
+ const host=$('statePolls'),entries=Object.entries(data.statePolls||{}).filter(([,p])=>p&&Number.isFinite(p.margin)).sort((a,b)=>b[1].margin-a[1].margin);
+ if(!entries.length){host.innerHTML='<div class="empty">State polling averages unavailable.</div>';return;}
+ const maxAbs=Math.max(5,...entries.map(([,p])=>Math.abs(p.margin)));
+ const hist=entries.map(([,p])=>{const h=(p.history||[]).filter(v=>Number.isFinite(v[1])),end=h.length?h.at(-1)[0]:0;return historyDays?h.filter(v=>v[0]>=end-historyDays*DAY):h;});
+ const all=hist.flat().map(v=>v[1]),lo=Math.min(0,...all),hi=Math.max(0,...all);
+ host.innerHTML=entries.map(([state,p],i)=>{
+  const h=hist[i],ind=state==='NE',col=p.margin>=0?(ind?'var(--muted)':'var(--blue)'):'var(--red)',wpc=Math.abs(p.margin)/maxAbs*50;
+  const sy=v=>2+(hi-v)/((hi-lo)||1)*20,sx=j=>1+j/Math.max(1,h.length-1)*98;
+  const spark=h.length>1?`<svg viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><line x1="0" x2="100" y1="${sy(0)}" y2="${sy(0)}" stroke="var(--muted)" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/><path d="${h.map((v,j)=>(j?'L':'M')+sx(j).toFixed(1)+','+sy(v[1]).toFixed(1)).join('')}" fill="none" stroke="${col}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`:'<span class="na">—</span>';
+  return `<button type="button" class="sp-row" data-state="${esc(state)}" aria-label="${esc((STATE_NAMES[state]||state)+' polling margin '+pollGap(p.margin,ind)+'; open race')}" title="${esc(`${p.dName} ${p.d}% vs ${p.rName} ${p.r}% · FiftyPlusOne average ${p.date}`)}"><span>${esc(STATE_NAMES[state]||state)}</span>${spark}<span class="sp-zero"><span style="background:${col};width:${wpc}%;left:${p.margin>=0?50:50-wpc}%"></span></span><span class="sp-val" style="color:${col}">${pollGap(p.margin,ind)}</span></button>`;
+ }).join('');
+}
+$('statePolls').addEventListener('click',e=>{const row=e.target.closest('.sp-row');if(row)openRace(row.dataset.state);});
 
 function linePattern(s,i){return s.pattern??((s.dash??i===1)?'6 3':'');}
 function chart(tile,series,opt){

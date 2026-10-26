@@ -30,14 +30,12 @@ def build(output, refresh=False):
     if refresh and all(p.get('stale') for p in data['polls'].values()) and data.get('marketsStale'):
         raise ValueError('All sources failed; keeping the previously published site')
     payload = json.dumps(data, separators=(',', ':')).replace('<', '\\u003c')
-    # The published site, plus the v2 preview served from <site>/v2/.
-    for template_name, folder in (('dashboard.template.html', output), ('dashboard.v2.template.html', output / 'v2')):
-        template = (ROOT / template_name).read_text()
-        if 'const STATIC_HOSTING = false;' not in template:
-            raise ValueError(f'Static hosting flag is missing from {template_name}')
-        html = template.replace('const STATIC_HOSTING = false;', 'const STATIC_HOSTING = true;').replace('__SNAPSHOT__', payload)
-        atomic_write(folder / 'snapshot.json', payload)
-        atomic_write(folder / 'index.html', html)
+    template = (ROOT / 'dashboard.template.html').read_text()
+    if 'const STATIC_HOSTING = false;' not in template:
+        raise ValueError('Static hosting flag is missing from the template')
+    html = template.replace('const STATIC_HOSTING = false;', 'const STATIC_HOSTING = true;').replace('__SNAPSHOT__', payload)
+    atomic_write(output / 'snapshot.json', payload)
+    atomic_write(output / 'index.html', html)
     atomic_write(output / '.nojekyll', '')
     # Keep a local fallback for collectors and cache it between scheduled builds.
     if refresh:
