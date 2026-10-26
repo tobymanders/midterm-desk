@@ -53,6 +53,7 @@ button:hover,.race-dial:hover{background:var(--hover)}a{color:var(--link)}.dial-
 #polls .stat .n,#controlPlot .stat .n{font-size:24px;white-space:nowrap}#polls .stat small,#controlPlot .stat small{line-height:1.4}
 @media(max-width:600px){#polls .readout,#controlPlot .readout{gap:8px 8px}#polls .stat .n,#controlPlot .stat .n{font-size:19px}#polls .stat small,#controlPlot .stat small{font-size:9px}}
 /* v2: tipping-point label, model-vs-market scatter, state polling bars. */
+.dial-move{display:block;text-align:center;font-size:10px;font-weight:normal;line-height:1.3;margin:-6px 0 6px;font-variant-numeric:tabular-nums}.dial-move.na{color:var(--muted)}
 .dial-tipping{top:0;left:0;width:auto;height:auto;padding:1px 6px 2px;border-radius:0 0 4px 0;background:var(--blue);color:var(--card);font-size:8px;line-height:9px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .scatter-section,.statepoll-section{margin-top:27px;min-width:0}
 .scatter-chart{height:440px;margin:6px 12px 12px}.scatter-chart svg{width:100%;height:100%;display:block;overflow:visible}
@@ -151,12 +152,21 @@ function dialQuote(q,positive){
  if(q.nonbinary)return `<span class="dial-balance"><span class="party-d">${Math.round(q.d)}%</span>/<span class="party-r">${Math.round(q.p)}%</span>/<span class="party-i">${Math.round(q.i)}%</span></span>`;
  return `<span style="color:${partyColor(50-q.p,positive)}">${Math.round(Math.max(q.p,100-q.p))}%</span>`;
 }
+function sevenDayMove(q){
+ const moves=['kalshi','polymarket'].map(s=>{const h=(q?.[s]?.history||[]).filter(p=>Number.isFinite(p[1]));if(h.length<2)return null;const end=h.at(-1),ref=h.filter(p=>p[0]<=end[0]-7*DAY).at(-1);return ref?(100-end[1])-(100-ref[1]):null;}).filter(Number.isFinite);
+ return moves.length?moves.reduce((a,b)=>a+b,0)/moves.length:null;
+}
+function dialMove(q,positive){
+ const m=sevenDayMove(q);if(m===null)return '<span class="dial-move na" title="7-day change unavailable">(—)</span>';
+ const color=m>0.05?(positive==='I'?'var(--muted)':C.d):m<-0.05?C.r:'var(--muted)';
+ return `<span class="dial-move" style="color:${color}" title="Change in average Kalshi and Polymarket win probability over 7 days">(${m>0?'+':''}${m.toFixed(1)} pp 7d)</span>`;
+}
 function dialMarkup(label,quotes,positive='D',tipping=false,state=null){
  const names={D:'Democrat',R:'Republican',I:'Independent'},average=dialAverage(quotes,positive);
  const sources=availableSources(quotes);
  const readings=sources.map(source=>`${probabilitySources[source].name}: ${quotes[source].nonbinary?'D '+Math.round(quotes[source].d)+'%, R '+Math.round(quotes[source].p)+'%, independent balance '+Math.round(quotes[source].i)+'%':edgeLabel(50-quotes[source].p,positive)}`).join('; ');
  const needles=sources.filter(source=>!quotes[source].nonbinary).map(source=>{const probability=quotes[source].p,angle=Math.PI*probability/100,radius=48,x=64+radius*Math.cos(angle),y=72-radius*Math.sin(angle),color=partyColor(50-probability,positive);return `<g class="dial-needle" data-source="${source}" data-republican="${probability}" data-x="${x}"><line x1="64" y1="72" x2="${x}" y2="${y}" stroke="${color}" stroke-width="2"/></g>`;}).join('');
- return `${tipping?'<span class="dial-tipping" role="img" aria-label="D tipping point" title="D tipping point: Democrats’ 17th race win in probability order plus 34 holdover caucus seats reaches 51.">Tipping point</span>':''}${state?`<a class="dial-plot-link" href="#race-${esc(state)}" aria-label="View ${esc(label)} full state plot">`:''}<div class="dial-title">${esc(label)}</div><span class="dial-average" style="color:${average.color}">${average.label}</span><svg class="temperature-dial" viewBox="0 0 128 96" role="img" aria-label="${esc(label+': Average '+average.label+'. '+readings+'. Republican on the left; '+names[positive]+' on the right.')}"${state?'':' tabindex="0"'}><title>${esc(readings)}</title><path d="M14 72 A50 50 0 0 1 64 22" fill="none" stroke="${C.r}" stroke-width="9"/><path d="M64 22 A50 50 0 0 1 114 72" fill="none" stroke="${positive==='I'?'var(--muted)':C.d}" stroke-width="9"/><path d="M64 13 V30" stroke="var(--muted)" stroke-width="1"/>${needles}<circle cx="64" cy="72" r="3" fill="var(--ink)"/><text x="14" y="92" text-anchor="middle" fill="${C.r}" font-size="10">R</text><text x="114" y="92" text-anchor="middle" fill="${positive==='I'?'var(--muted)':C.d}" font-size="10">${positive}</text></svg>${state?'</a>':''}<div class="dial-quotes">${sources.map(source=>`<a href="${esc(quotes[source].url)}" target="_blank" rel="noopener" aria-label="${probabilitySources[source].name} ${esc(label)} probability"><span class="dial-source">${probabilitySources[source].short}</span> ${dialQuote(quotes[source],positive)}${sourceStale(quotes[source])?' <span class="stale">*</span>':''}</a>`).join('')||'<span>Unavailable</span>'}</div>`;
+ return `${tipping?'<span class="dial-tipping" role="img" aria-label="D tipping point" title="D tipping point: Democrats’ 17th race win in probability order plus 34 holdover caucus seats reaches 51.">Tipping point</span>':''}${state?`<a class="dial-plot-link" href="#race-${esc(state)}" aria-label="View ${esc(label)} full state plot">`:''}<div class="dial-title">${esc(label)}</div><span class="dial-average" style="color:${average.color}">${average.label}</span>${dialMove(quotes,positive)}<svg class="temperature-dial" viewBox="0 0 128 96" role="img" aria-label="${esc(label+': Average '+average.label+'. '+readings+'. Republican on the left; '+names[positive]+' on the right.')}"${state?'':' tabindex="0"'}><title>${esc(readings)}</title><path d="M14 72 A50 50 0 0 1 64 22" fill="none" stroke="${C.r}" stroke-width="9"/><path d="M64 22 A50 50 0 0 1 114 72" fill="none" stroke="${positive==='I'?'var(--muted)':C.d}" stroke-width="9"/><path d="M64 13 V30" stroke="var(--muted)" stroke-width="1"/>${needles}<circle cx="64" cy="72" r="3" fill="var(--ink)"/><text x="14" y="92" text-anchor="middle" fill="${C.r}" font-size="10">R</text><text x="114" y="92" text-anchor="middle" fill="${positive==='I'?'var(--muted)':C.d}" font-size="10">${positive}</text></svg>${state?'</a>':''}<div class="dial-quotes">${sources.map(source=>`<a href="${esc(quotes[source].url)}" target="_blank" rel="noopener" aria-label="${probabilitySources[source].name} ${esc(label)} probability"><span class="dial-source">${probabilitySources[source].short}</span> ${dialQuote(quotes[source],positive)}${sourceStale(quotes[source])?' <span class="stale">*</span>':''}</a>`).join('')||'<span>Unavailable</span>'}</div>`;
 }
 function democraticChance(race){
  const independent=!!race.candidates?.some(c=>c.party==='I')&&!race.candidates?.some(c=>c.party==='D');
@@ -345,10 +355,9 @@ function raceRows(){
  return [...universe.values()].map(r=>{
   const v={};for(const s of TABLE_SOURCES)v[s]=dSide(r[s]);
   const have=TABLE_SOURCES.map(s=>v[s]).filter(Number.isFinite),avg=have.length?have.reduce((a,b)=>a+b,0)/have.length:null;
-  const moves=['kalshi','polymarket'].map(s=>{const h=(r[s]?.history||[]).filter(p=>Number.isFinite(p[1]));if(h.length<2)return null;const end=h.at(-1),ref=h.filter(p=>p[0]<=end[0]-7*DAY).at(-1);return ref?(100-end[1])-(100-ref[1]):null;}).filter(Number.isFinite);
   const dem=r.candidates?.find(c=>c.party==='D')||r.candidates?.find(c=>c.party==='I'),rep=r.candidates?.find(c=>c.party==='R');
   return {r,state:r.state,name:r.name||STATE_NAMES[r.state]||r.state,special:!!r.special,tipping:r.state===tipping,v,avg,
-   gap:have.length>1?Math.max(...have)-Math.min(...have):null,move:moves.length?moves.reduce((a,b)=>a+b,0)/moves.length:null,
+   gap:have.length>1?Math.max(...have)-Math.min(...have):null,move:sevenDayMove(r),
    close:avg===null?null:Math.abs(avg-50),outlook:outlookOf(avg),volume:r.kalshi?.volume24h??null,
    poll:data.statePolls?.[r.state]||null,hasHistory:['kalshi','polymarket'].some(s=>(r[s]?.history?.length||0)>1),
    matchup:(r.candidates||[]).map(c=>`${c.name} (${c.party})`).join(' vs '),dem,rep,
